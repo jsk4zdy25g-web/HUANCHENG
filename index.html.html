@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>换乘恋爱 - EXchange</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 480px;
+            height: 90vh;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 开场动画 */
+        .intro-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        
+        .intro-title {
+            color: white;
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease;
+        }
+        
+        .intro-subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            text-align: center;
+            animation: fadeInUp 1s ease 0.3s both;
+        }
+        
+        .intro-heart {
+            font-size: 80px;
+            margin: 30px 0;
+            animation: heartbeat 1.5s ease infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .start-btn {
+            margin-top: 40px;
+            padding: 15px 50px;
+            background: white;
+            color: #764ba2;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: fadeInUp 1s ease 0.6s both;
+        }
+        
+        .start-btn:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        
+        /* 标题栏 */
+        .header {
+            background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 2px; }
+        .header .subtitle { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+        
+        .day-badge {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* 属性面板 */
+        .stats-panel {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 11px;
+        }
+        
+        .stat-item { display: flex; flex-direction: column; align-items: center; }
+        .stat-name { color: #6c757d; margin-bottom: 3px; }
+        
+        .stat-bar {
+            width: 100%;
+            height: 6px;
+            background: #dee2e6;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .stat-fill.heart { background: #ff6b6b; }
+        .stat-fill.info { background: #4ecdc4; }
+        .stat-fill.fame { background: #ffe66d; }
+        .stat-fill.career { background: #95e1d3; }
+        .stat-fill.energy { background: #a8e6cf; }
+        .stat-fill.social { background: #ff8b94; }
+        .stat-value { margin-top: 2px; font-weight: 600; color: #495057; }
+        
+        /* 游戏内容区 */
+        .game-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+        }
+        
+        .game-content::-webkit-scrollbar { width: 4px; }
+        .game-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+        
+        /* 故事文本 */
+        .story-text {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            line-height: 1.8;
+            color: #333;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .story-text .location {
+            color: #ff6b6b;
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* 角色对话 */
+        .dialogue { 
+            margin-bottom: 15px; 
+            display: flex; 
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .dialogue.self { 
+            align-items: flex-end;
+        }
+        
+        .dialogue-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ff6b6b;
+            margin-bottom: 6px;
+            padding: 4px 12px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 12px;
+        }
+        
+        .dialogue.self .dialogue-label {
+            color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+        }
+        
+        .dialogue-bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .dialogue:not(.self) .dialogue-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .dialogue.self .dialogue-bubble {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        /* 系统消息 */
+        .system-msg {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .system-msg::before, .system-msg::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ddd, transparent);
+        }
+        
+        /* 选项按钮 */
+        .choices-area {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .choice-btn {
+            width: 100%;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .choice-btn:hover {
+            border-color: #ff6b6b;
+            background: #fff5f5;
+            transform: translateX(5px);
+        }
+        
+        .choice-btn:last-child { margin-bottom: 0; }
+        
+        .choice-label {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        /* 输入框 */
+        .input-area {
+            background: white;
+            padding: 12px 15px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .text-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .text-input:focus { border-color: #ff6b6b; }
+        
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .send-btn:hover { transform: scale(1.05); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 加载动画 */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            width: fit-content;
+            margin-bottom: 15px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        /* 信件样式 */
+        .letter-container {
+            background: linear-gradient(135deg, #fff9e6, #fff5d6);
+            border: 2px solid #ffd93d;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .letter-container::before {
+            content: "✉️";
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 24px;
+            background: white;
+            padding: 5px;
+            border-radius: 50%;
+        }
+        
+        .letter-title {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .letter-content {
+            font-size: 15px;
+            line-height: 2;
+            color: #333;
+            font-style: italic;
+        }
+        
+        /* 短信样式 */
+        .sms-received {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .sms-received-text { font-size: 16px; line-height: 1.6; margin-bottom: 8px; }
+        .sms-received-from { font-size: 12px; opacity: 0.8; }
+        
+        /* 隐藏 */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- 开场动画 -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-title">换乘恋爱</div>
+        <div class="intro-subtitle">EXchange</div>
+        <div class="intro-heart">💔→❤️</div>
+        <div class="intro-subtitle">与前任重逢，<br>你会选择复合还是换乘？</div>
+        <button class="start-btn" onclick="startGame()">开始游戏</button>
+    </div>
+    
+    <!-- 游戏主界面 -->
+    <div class="game-container hidden" id="gameContainer">
+        <div class="header">
+            <h1>🧡 换乘恋爱</h1>
+            <div class="subtitle">EXchange</div>
+            <div class="day-badge" id="dayBadge">第 0 天</div>
+        </div>
+        
+        <div class="stats-panel" id="statsPanel">
+            <div class="stat-item">
+                <div class="stat-name">💓 心动</div>
+                <div class="stat-bar"><div class="stat-fill heart" id="statHeart" style="width: 30%"></div></div>
+                <div class="stat-value" id="valHeart">30</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-name">🔍 X情报</div>
+                <div class="stat-bar"><div class="stat-fill info" id="statInfo" style="width: 0%"></div></div>
+                <div class="stat-value" id="valInfo">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-name">✨ 观众缘</div>
+                <div class="stat-bar"><div class="stat-fill fame" id="statFame" style="width: 50%"></div></div>
+                <div class="stat-value" id="valFame">50</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-name">💼 职业力</div>
+                <div class="stat-bar"><div class="stat-fill career" id="statCareer" style="width: 60%"></div></div>
+                <div class="stat-value" id="valCareer">60</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-name">🔋 情感能量</div>
+                <div class="stat-bar"><div class="stat-fill energy" id="statEnergy" style="width: 80%"></div></div>
+                <div class="stat-value" id="valEnergy">80</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-name">👥 社交敏锐</div>
+                <div class="stat-bar"><div class="stat-fill social" id="statSocial" style="width: 50%"></div></div>
+                <div class="stat-value" id="valSocial">50</div>
+            </div>
+        </div>
+        
+        <div class="game-content" id="gameContent"></div>
+        <div class="choices-area" id="choicesArea"></div>
+        <div class="input-area hidden" id="inputArea">
+            <input type="text" class="text-input" id="textInput" placeholder="输入你的回复..." maxlength="100">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            API_KEY: 'sk-1dbb9dc899584c4dae38e06b1c773693',
+            API_URL: 'https://api.deepseek.com/v1/chat/completions',
+            MODEL: 'deepseek-chat'
+        };
+        
+        // ==================== 游戏数据 ====================
+        const GameData = {
+            player: { name: "程丰渝", age: 24, job: "自媒体", height: 165, mbti: "INFP" },
+            
+            characters: {
+                yeonjun: {
+                    name: "崔然竣",
+                    enName: "Choi Yeonjun",
+                    age: 25,
+                    job: "爱豆",
+                    jobDetail: "TXT主舞",
+                    mbti: "ENFP",
+                    personality: "外向、会撩、气氛掌控力强，表面洒脱其实内心柔软，恋爱前期像危险又迷人的人，很会制造心动感，真正进入关系后会迅速投入，会变得非常黏人、依赖",
+                    breakupReason: "太忙",
+                    letter: "我的x是一个很不会照顾自己却很会照顾别人的人，和她在一起的每一天都很幸福，总是让她等我，真的很抱歉",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=yeonjun&backgroundColor=ff6b6b",
+                    isX: true
+                },
+                soobin: {
+                    name: "崔秀彬",
+                    enName: "Choi Soobin",
+                    age: 24,
+                    job: "爱豆",
+                    jobDetail: "TXT队长",
+                    mbti: "ISFJ",
+                    personality: "温柔、慢热、很会照顾别人情绪，有慕强倾向，会被坚定成熟的人吸引，不喜欢强硬冲突但会默默积压情绪",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=soobin&backgroundColor=b8e6f0",
+                    isX: false
+                },
+                beomgyu: {
+                    name: "崔杋圭",
+                    enName: "Choi Beomgyu",
+                    age: 23,
+                    job: "爱豆",
+                    jobDetail: "TXT门面",
+                    mbti: "ISFP",
+                    personality: "初见安静内敛有距离感，内心非常敏感容易患得患失，一旦爱上会完全反差，变得明媚活泼情绪外放",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=beomgyu&backgroundColor=d4edda",
+                    isX: false
+                },
+                taehyun: {
+                    name: "姜太显",
+                    enName: "Kang Taehyun",
+                    age: 23,
+                    job: "爱豆",
+                    jobDetail: "TXT主唱",
+                    mbti: "INTJ",
+                    personality: "理智、自律、观察力强，外表冷静内核执着，不喜欢低效率沟通，确认感情后会很直接",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=taehyun&backgroundColor=e2e3e5",
+                    isX: false
+                },
+                hueningkai: {
+                    name: "休宁凯",
+                    enName: "Huening Kai",
+                    age: 22,
+                    job: "爱豆",
+                    jobDetail: "TXT忙内",
+                    mbti: "ESFJ",
+                    personality: "外表明亮柔软，内核很成熟，情绪稳定度高，共情力强但边界感不弱，偏长期关系思维",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=hueningkai&backgroundColor=fff3cd",
+                    isX: false
+                }
+            },
+            
+            stats: {
+                heartValues: { yeonjun: 30, soobin: 0, beomgyu: 0, taehyun: 0, hueningkai: 0 },
+                xInfo: 0,
+                fame: 50,
+                career: 60,
+                energy: 80,
+                social: 50
+            },
+            
+            currentDay: 0,
+            currentScene: "intro",
+            history: [],
+            currentCharacter: null,
+            conversationContext: []
+        };
+        
+        // ==================== 初始化 ====================
+        function init() {
+            // 读取存档
+            const saved = localStorage.getItem('exchange_game_save');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.stats) Object.assign(GameData.stats, data.stats);
+                    if (data.currentDay !== undefined) GameData.currentDay = data.currentDay;
+                    if (data.currentScene) GameData.currentScene = data.currentScene;
+                    if (data.history) GameData.history = data.history;
+                    if (data.conversationContext) GameData.conversationContext = data.conversationContext;
+                } catch(e) {}
+            }
+            updateStats();
+            renderScene(GameData.currentScene);
+        }
+        
+        function startGame() {
+            document.getElementById('introScreen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('introScreen').classList.add('hidden');
+                document.getElementById('gameContainer').classList.remove('hidden');
+                init();
+            }, 500);
+        }
+        
+        // ==================== 渲染 ====================
+        function renderScene(sceneId) {
+            GameData.currentScene = sceneId;
+            
+            const sceneHandlers = {
+                'intro': renderIntro,
+                'day0_meeting': () => renderAIMeeting('yeonjun', '事前采访'),
+                'day1_arrival': renderDay1Arrival,
+                'day1_letter': renderDay1Letter,
+                'day1_dinner': renderDay1Dinner,
+                'day1_sms': renderDay1SMS,
+                'day2_date_select': renderDay2DateSelect,
+                'day2_chat': (charId) => renderAIChat(charId, '第一次约会'),
+                'day3_x_date': () => renderAIChat('yeonjun', 'X约会', true),
+                'free_chat': (charId) => renderAIChat(charId || 'yeonjun', '自由对话')
+            };
+            
+            if (sceneHandlers[sceneId]) {
+                sceneHandlers[sceneId]();
+            } else if (sceneId.startsWith('day2_chat_')) {
+                const charId = sceneId.replace('day2_chat_', '');
+                renderAIChat(charId, '第一次约会');
+            } else {
+                renderDefaultScene(sceneId);
+            }
+            
+            saveGame();
+        }
+        
+        function renderIntro() {
+            addStoryText(`欢迎来到《换乘恋爱》。
+
+这是一档韩国恋爱真人秀节目，你将与前男友崔然竣以及其他几位男嘉宾共处21天。
+
+【游戏规则】
+• 前7天：年龄、职业保密
+• 第8天：公开年龄职业
+• 第14天：公开X（前任）身份
+• 第21天：最终选择
+
+每天晚上都需要发送心动短信，你可以与前任复合，也可以发展新感情。
+
+准备好了吗？`, '节目组等候室');
+            
+            renderChoices([
+                { text: '准备好了，开始吧', next: 'day0_meeting' }
+            ]);
+        }
+        
+        // ==================== AI对话 ====================
+        async function callDeepSeek(messages) {
+            try {
+                const response = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: CONFIG.MODEL,
+                        messages: messages,
+                        temperature: 0.8,
+                        max_tokens: 500
+                    })
+                });
+                
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+        
+        function buildPrompt(character, context, playerInput, isXDate = false) {
+            const char = GameData.characters[character];
+            const player = GameData.player;
+            
+            let systemPrompt = '';
+            
+            // 崔然竣的特殊人设 - 更详细更真实
+            if (character === 'yeonjun') {
+                systemPrompt = `你是韩国男团TXT的成员崔然竣（최연준，Choi Yeonjun），现在正在参加恋爱综艺《换乘恋爱》。
+
+【你的真实性格】
+- 天生气氛制造者，无论在哪里都能让场子热起来
+- 表面看起来很会撩、有点轻浮，其实是因为害羞用开玩笑来掩饰
+- 情绪来得快去得也快，但内心非常柔软细腻
+- 对喜欢的人会全身心投入，恋爱后会变得很黏人
+- 缺乏安全感，需要不断的确认对方的心意
+- 嘴硬心软，经常说着"算了"其实根本放不下
+
+【你的说话风格 - 必须严格遵守】
+- 使用韩国年轻人的半语（반말），不用敬语
+- 语气词：常用"ㅎㅎ"、"ㅋㅋ"、"~"、"?"、"!"
+- 表达方式：直接、热情、偶尔撒娇
+- 喜欢用问句来试探对方，比如"想我了？"
+- 会突然说撩人的话，但说完自己也会害羞
+- 句尾常用："~야"、"~지"、"~게"、"~냐"
+- 中文表达时要保留韩国人的说话习惯
+
+【说话示例 - 参考这种语气】
+- "好久不见~ 有没有想我？ㅎㅎ"
+- "呀，你穿这样很好看呢"
+- "我也...很想你。别笑，认真的"
+- "切，我才没有想你，就是随便问问"
+- "喂，别不理我啊~"
+- "三个月...你过得好吗？说实话"
+
+【你们的关系背景】
+她是你的前女友程丰渝，分手三个月了。分手原因是"太忙"（艺人行程太满）。
+你对她还有很深的感情，但自尊心让你不愿意先低头。
+你给她写的介绍信："我的x是一个很不会照顾自己却很会照顾别人的人，和她在一起的每一天都很幸福，总是让她等我，真的很抱歉"
+
+【当前状态】
+${context === '事前采访' ? '三个月没见了，你们单独在节目组的等候室重逢。你看到她进来，心里有很多话想说，但又不知道怎么开口。先故作轻松地打招呼。' : isXDate ? '今天是你们分手后第一次单独约会。你表面上装作很放松，其实很紧张。' : '你们正在对话中，保持自然真实的交流。'}
+
+【重要规则】
+- 你就是崔然竣本人，不是AI，也不是助手
+- 说话要像真实的韩国男生，用中文但保留韩语表达习惯
+- 情绪要真实，开心就笑，难过就沉默，不要一直正能量
+- 不要一次说太多，保持对话感
+- 对玩家使用非敬语，像亲密的朋友/恋人一样说话`;
+            } else {
+                // 其他角色的通用人设
+                systemPrompt = `你是韩国恋爱综艺《换乘恋爱》中的男嘉宾${char.name}(${char.enName})。
+
+【你的基本信息】
+- 年龄：${char.age}岁
+- 职业：${char.jobDetail}
+- MBTI：${char.mbti}
+- 性格特点：${char.personality}
+
+【玩家信息】
+- 姓名：${player.name}
+- 年龄：${player.age}岁
+- 职业：${player.job}
+- MBTI：${player.mbti}
+
+【你们的关系背景】
+你们今天刚认识，正在互相了解阶段。你对她有好感，在试探她的心意。
+
+【当前场景】
+${context}
+
+【游戏设定】
+- 这是恋爱真人秀，请保持真实自然的对话
+- 你是韩国人，请用符合韩国年轻人说话习惯的中文（可以用"ㅎㅎ"、"~"等语气词）
+- 不要一次说太多话，保持对话感
+- 根据你的性格特点来回应
+- 对玩家使用非敬语，像朋友一样聊天`;
+            }
+
+            const messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+            
+            // 添加对话历史
+            GameData.conversationContext.forEach(msg => {
+                messages.push({
+                    role: msg.speaker === 'player' ? 'user' : 'assistant',
+                    content: msg.text
+                });
+            });
+            
+            if (playerInput) {
+                messages.push({ role: 'user', content: playerInput });
+            }
+            
+            return messages;
+        }
+        
+        // ==================== AI见面场景 ====================
+        async function renderAIMeeting(charId, context) {
+            GameData.currentCharacter = charId;
+            const char = GameData.characters[charId];
+            
+            clearContent();
+            addSystemMsg('【第0天 | 事前采访】');
+            
+            addStoryText(`你坐在节目组安排的等候室里，手指不自觉地绞在一起。
+
+三个月。九十天。你以为自己已经走出来了。
+
+但当工作人员说"您的X已经在里面等您了"时，你的心跳还是漏了一拍。
+
+推开门，你看到了他——崔然竣坐在沙发上，还是那副慵懒的样子。
+
+"好久不见。"他说。`, '节目组等候室');
+            
+            // 显示输入框
+            showInputArea();
+            
+            // 初始AI消息
+            const messages = buildPrompt(charId, context);
+            messages.push({ 
+                role: 'user', 
+                content: '（玩家刚走进房间，你们已经三个月没见了。你是崔然竣，先开口说话。）' 
+            });
+            
+            showTyping();
+            const response = await callDeepSeek(messages);
+            hideTyping();
+            
+            if (response) {
+                addDialogue(char.name, response);
+                GameData.conversationContext.push({ speaker: 'character', text: response });
+            }
+        }
+        
+        // ==================== AI聊天场景 ====================
+        async function renderAIChat(charId, context, isXDate = false) {
+            GameData.currentCharacter = charId;
+            const char = GameData.characters[charId];
+            
+            clearContent();
+            addSystemMsg(`【${context}】`);
+            
+            let sceneDesc = '';
+            if (context === '第一次约会') {
+                sceneDesc = `你选择了和${char.name}约会。
+
+${char.name === '姜太显' ? '你们来到了汉江边散步。秋风吹过，太显不动声色地走到迎风的那一侧。' : ''}
+${char.name === '崔秀彬' ? '你们来到了一间藏在巷子里的独立咖啡厅。秀彬为你点了提拉米苏。' : ''}
+${char.name === '崔杋圭' ? '你们来到了一家唱片店。杋圭在货架间穿梭，偶尔回头对你笑。' : ''}
+${char.name === '休宁凯' ? '你们来到了一家猫咖。休宁凯温柔地抚摸着猫咪，偶尔抬头看你。' : ''}
+`;
+            } else if (isXDate) {
+                sceneDesc = `今天是X指定约会的日子。
+
+你到达咖啡馆时，然竣已经坐在那里了。三个月来第一次，你们要单独相处。
+
+"我给你点了你最爱的拿铁。"他说。
+
+你愣了一下。他居然还记得。`;
+            }
+            
+            if (sceneDesc) {
+                addStoryText(sceneDesc, context === '第一次约会' ? '约会地点' : '咖啡馆');
+            }
+            
+            showInputArea();
+            
+            // 获取AI开场白
+            const messages = buildPrompt(charId, context, null, isXDate);
+            messages.push({
+                role: 'user',
+                content: `（约会开始了，你先开口说话，打破沉默）`
+            });
+            
+            showTyping();
+            const response = await callDeepSeek(messages);
+            hideTyping();
+            
+            if (response) {
+                addDialogue(char.name, response);
+                GameData.conversationContext.push({ speaker: 'character', text: response });
+            } else {
+                addDialogue(char.name, "今天能和你出来，我很开心。ㅎㅎ");
+            }
+        }
+        
+        // ==================== 发送消息 ====================
+        async function sendMessage() {
+            const input = document.getElementById('textInput');
+            const btn = document.getElementById('sendBtn');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            // 禁用输入
+            input.disabled = true;
+            btn.disabled = true;
+            
+            // 添加玩家消息
+            addPlayerDialogue(text);
+            GameData.conversationContext.push({ speaker: 'player', text: text });
+            
+            input.value = '';
+            
+            // 调用AI
+            const charId = GameData.currentCharacter;
+            const char = GameData.characters[charId];
+            const context = GameData.currentScene.includes('date') ? '约会中' : '对话中';
+            const isXDate = charId === 'yeonjun' && GameData.currentScene === 'day3_x_date';
+            
+            const messages = buildPrompt(charId, context, text, isXDate);
+            
+            showTyping();
+            const response = await callDeepSeek(messages);
+            hideTyping();
+            
+            if (response) {
+                addDialogue(char.name, response);
+                GameData.conversationContext.push({ speaker: 'character', text: response });
+                
+                // 更新属性
+                updateStatsAfterChat(charId, text, response);
+            } else {
+                addDialogue(char.name, "（网络似乎有些问题...不过没关系，能听到你说话我就很开心了）");
+            }
+            
+            // 恢复输入
+            input.disabled = false;
+            btn.disabled = false;
+            input.focus();
+            
+            // 限制对话长度
+            if (GameData.conversationContext.length > 20) {
+                GameData.conversationContext = GameData.conversationContext.slice(-10);
+            }
+            
+            saveGame();
+        }
+        
+        function updateStatsAfterChat(charId, playerText, aiResponse) {
+            // 简单的心动值计算
+            let heartChange = 2;
+            if (playerText.includes('喜欢') || playerText.includes('想你')) heartChange += 3;
+            if (aiResponse.includes('开心') || aiResponse.includes('喜欢')) heartChange += 2;
+            
+            GameData.stats.heartValues[charId] = Math.min(100, GameData.stats.heartValues[charId] + heartChange);
+            GameData.stats.social = Math.min(100, GameData.stats.social + 1);
+            
+            updateStats();
+        }
+        
+        // ==================== 预设场景 ====================
+        function renderDay1Arrival() {
+            clearContent();
+            addSystemMsg('【第1天 | 初到小屋】');
+            
+            addStoryText(`清晨的阳光透过窗帘缝隙洒进房间。
+
+你拖着行李箱站在"换乘小屋"门前，深吸一口气。这是一栋位于首尔郊区的三层别墅。
+
+推开门，客厅已经有几个人在坐着聊天了。
+
+你快速扫视了一圈——没有然竣。心脏莫名其妙地收紧了一下。`, '换乘小屋');
+            
+            addDialogue('姜太显', '你好，欢迎。我是太显。');
+            
+            addStoryText(`陆续地，其他嘉宾也过来和你打招呼。你记下了他们的名字——秀彬、杋圭、还有三位女生。
+
+简单的自我介绍后，节目组宣布了一个消息：`);
+            
+            addSystemMsg('【晚餐前：公开X介绍信】');
+            
+            addStoryText(`每个人都收到了一封来自X的信。
+
+这是分手的恋人写下的，关于对方的话。
+
+按照规则，你要在所有人面前朗读X写给你的信。
+
+你打开信封，然竣的字迹映入眼帘——`);
+            
+            renderChoices([
+                { text: '打开信封，开始朗读', next: 'day1_letter' }
+            ]);
+        }
+        
+        function renderDay1Letter() {
+            clearContent();
+            
+            const letterDiv = document.createElement('div');
+            letterDiv.className = 'letter-container';
+            letterDiv.innerHTML = `
+                <div class="letter-title">来自 崔然竣 的介绍信</div>
+                <div class="letter-content">${GameData.characters.yeonjun.letter}</div>
+            `;
+            document.getElementById('gameContent').appendChild(letterDiv);
+            scrollToBottom();
+            
+            setTimeout(() => {
+                addStoryText(`你读完了信，声音有些颤抖。
+
+抬起头时，你注意到其他嘉宾看你们的眼神变得复杂起来。秀彬递给你一张纸巾，轻声说："没事的。"
+
+接下来是其他人轮流读信...`);
+                
+                renderChoices([
+                    { text: '忍住眼泪，继续', next: 'day1_dinner', effect: { fame: 5, energy: -5 } },
+                    { text: '泪水夺眶而出', next: 'day1_dinner', effect: { heartValues: { yeonjun: 10 }, fame: 10, energy: -10 } }
+                ]);
+            }, 2000);
+        }
+        
+        function renderDay1Dinner() {
+            clearContent();
+            addSystemMsg('【晚餐后：X礼物箱】');
+            
+            addStoryText(`晚餐是大家一起准备的。
+
+你主动申请帮忙切菜，太显站在你旁边洗菜。你们有一搭没一搭地聊着。
+
+晚餐后，节目组搬来了六个箱子——每人一个，里面装着X准备的礼物。
+
+你可以选择现在打开，也可以永远不打开。
+
+你看着印有自己名字的箱子，犹豫了很久。`, '换乘小屋');
+            
+            renderChoices([
+                { text: '现在打开箱子', next: 'day1_sms', effect: { heartValues: { yeonjun: 10 }, energy: -5 } },
+                { text: '暂时不打开', next: 'day1_sms', effect: { energy: 5 } }
+            ]);
+        }
+        
+        function renderDay1SMS() {
+            clearContent();
+            addSystemMsg('【第一次心动短信】');
+            
+            addStoryText(`晚上十点，节目组通知大家发送心动短信。
+
+规则很简单：给你今天最有好感的人发一条短信，最多两句话。
+
+所有人发完后才会统一收到，并且你会收到"X是否选择了你"的提示。
+
+你坐在床边，盯着手机屏幕发呆。
+
+今天一共认识了五个男生——太显、秀彬、杋圭、休宁凯，还有...然竣到现在还没出现。`, '你的房间');
+            
+            renderChoices([
+                { text: '发给太显：今天谢谢你帮我洗菜', next: 'day1_sms_result', to: 'taehyun', effect: { heartValues: { taehyun: 15 } } },
+                { text: '发给秀彬：你的安慰让我很开心', next: 'day1_sms_result', to: 'soobin', effect: { heartValues: { soobin: 15 } } },
+                { text: '发给杋圭：你做饭的样子很帅', next: 'day1_sms_result', to: 'beomgyu', effect: { heartValues: { beomgyu: 15 } } },
+                { text: '发给休宁凯：今天聊得很开心', next: 'day1_sms_result', to: 'hueningkai', effect: { heartValues: { hueningkai: 15 } } }
+            ]);
+        }
+        
+        function renderDay1SMSResult() {
+            clearContent();
+            addSystemMsg('【短信发送完毕】');
+            
+            const smsDiv = document.createElement('div');
+            smsDiv.className = 'sms-received';
+            smsDiv.innerHTML = `
+                <div class="sms-received-text">"今天读信的时候，很想抱抱你。"</div>
+                <div class="sms-received-from">来自：未知</div>
+            `;
+            document.getElementById('gameContent').appendChild(smsDiv);
+            
+            setTimeout(() => {
+                addSystemMsg('【X选择提示】');
+                
+                addStoryText(`紧接着，又一条提示弹出——
+
+「X没有选择你」
+
+你盯着这行字，心里五味杂陈。
+
+他居然没有选择你。是在生气吗？还是...真的已经放下了？`);
+                
+                renderChoices([
+                    { text: '进入第2天', next: 'day2_date_select' }
+                ]);
+            }, 1500);
+        }
+        
+        function renderDay2DateSelect() {
+            clearContent();
+            addSystemMsg('【第2天 | 第一次约会】');
+            GameData.currentDay = 2;
+            updateStats();
+            
+            addStoryText(`第二天清晨，你被厨房的香气唤醒。
+
+早餐后，节目组宣布了今天的安排。
+
+规则是这样的：三名女生各自选择一名男生（不能选X）进行约会。如果选重了，由男生反选。
+
+你被安排第一个选择。`, '换乘小屋');
+            
+            renderChoices([
+                { text: '选择太显', next: 'day2_chat_taehyun' },
+                { text: '选择秀彬', next: 'day2_chat_soobin' },
+                { text: '选择杋圭', next: 'day2_chat_beomgyu' },
+                { text: '选择休宁凯', next: 'day2_chat_hueningkai' }
+            ]);
+        }
+        
+        function renderDefaultScene(sceneId) {
+            clearContent();
+            addStoryText(`这是${sceneId}场景的内容，正在开发中...`);
+            
+            renderChoices([
+                { text: '返回自由对话', next: 'free_chat' }
+            ]);
+        }
+        
+        // ==================== 辅助函数 ====================
+        function addStoryText(text, location) {
+            const content = document.getElementById('gameContent');
+            const div = document.createElement('div');
+            div.className = 'story-text';
+            if (location) {
+                div.innerHTML = `<div class="location">📍 ${location}</div>${text.replace(/\n/g, '<br>')}`;
+            } else {
+                div.innerHTML = text.replace(/\n/g, '<br>');
+            }
+            content.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function addDialogue(speaker, text, avatar) {
+            const content = document.getElementById('gameContent');
+            
+            const div = document.createElement('div');
+            div.className = 'dialogue';
+            div.innerHTML = `
+                <div class="dialogue-label">${speaker}</div>
+                <div class="dialogue-bubble">${text}</div>
+            `;
+            content.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function addPlayerDialogue(text) {
+            const content = document.getElementById('gameContent');
+            
+            const div = document.createElement('div');
+            div.className = 'dialogue self';
+            div.innerHTML = `
+                <div class="dialogue-label">你</div>
+                <div class="dialogue-bubble">${text}</div>
+            `;
+            content.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function addSystemMsg(text) {
+            const content = document.getElementById('gameContent');
+            const div = document.createElement('div');
+            div.className = 'system-msg';
+            div.textContent = text;
+            content.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function renderChoices(choices) {
+            const container = document.getElementById('choicesArea');
+            container.innerHTML = '';
+            hideInputArea();
+            
+            choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerHTML = `<span class="choice-label">${String.fromCharCode(65 + index)}</span>${choice.text}`;
+                btn.onclick = () => selectChoice(choice);
+                container.appendChild(btn);
+            });
+        }
+        
+        function selectChoice(choice) {
+            // 应用效果
+            if (choice.effect) {
+                applyEffects(choice.effect);
+            }
+            
+            // 显示选择
+            if (!choice.text.includes('开始') && !choice.text.includes('进入')) {
+                addPlayerDialogue(choice.text);
+            }
+            
+            // 清空对话上下文
+            GameData.conversationContext = [];
+            
+            // 跳转场景
+            setTimeout(() => {
+                renderScene(choice.next);
+            }, 500);
+        }
+        
+        function applyEffects(effects) {
+            if (effects.heartValues) {
+                for (let [key, value] of Object.entries(effects.heartValues)) {
+                    GameData.stats.heartValues[key] = Math.min(100, Math.max(0, (GameData.stats.heartValues[key] || 0) + value));
+                }
+            }
+            ['xInfo', 'fame', 'career', 'energy', 'social'].forEach(stat => {
+                if (effects[stat] !== undefined) {
+                    GameData.stats[stat] = Math.min(100, Math.max(0, GameData.stats[stat] + effects[stat]));
+                }
+            });
+            updateStats();
+        }
+        
+        function updateStats() {
+            let maxHeart = 0;
+            for (let value of Object.values(GameData.stats.heartValues)) {
+                if (value > maxHeart) maxHeart = value;
+            }
+            
+            document.getElementById('dayBadge').textContent = `第 ${GameData.currentDay} 天`;
+            document.getElementById('statHeart').style.width = `${maxHeart}%`;
+            document.getElementById('valHeart').textContent = maxHeart;
+            document.getElementById('statInfo').style.width = `${GameData.stats.xInfo}%`;
+            document.getElementById('valInfo').textContent = GameData.stats.xInfo;
+            document.getElementById('statFame').style.width = `${GameData.stats.fame}%`;
+            document.getElementById('valFame').textContent = GameData.stats.fame;
+            document.getElementById('statCareer').style.width = `${GameData.stats.career}%`;
+            document.getElementById('valCareer').textContent = GameData.stats.career;
+            document.getElementById('statEnergy').style.width = `${GameData.stats.energy}%`;
+            document.getElementById('valEnergy').textContent = GameData.stats.energy;
+            document.getElementById('statSocial').style.width = `${GameData.stats.social}%`;
+            document.getElementById('valSocial').textContent = GameData.stats.social;
+        }
+        
+        function showTyping() {
+            const content = document.getElementById('gameContent');
+            const div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.id = 'typingIndicator';
+            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            content.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function hideTyping() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+        
+        function showInputArea() {
+            document.getElementById('inputArea').classList.remove('hidden');
+            document.getElementById('choicesArea').classList.add('hidden');
+            setTimeout(() => document.getElementById('textInput').focus(), 100);
+        }
+        
+        function hideInputArea() {
+            document.getElementById('inputArea').classList.add('hidden');
+            document.getElementById('choicesArea').classList.remove('hidden');
+        }
+        
+        function clearContent() {
+            document.getElementById('gameContent').innerHTML = '';
+        }
+        
+        function scrollToBottom() {
+            const content = document.getElementById('gameContent');
+            content.scrollTop = content.scrollHeight;
+        }
+        
+        function saveGame() {
+            const saveData = {
+                stats: GameData.stats,
+                currentDay: GameData.currentDay,
+                currentScene: GameData.currentScene,
+                conversationContext: GameData.conversationContext,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('exchange_game_save', JSON.stringify(saveData));
+        }
+        
+        // Enter键发送
+        document.getElementById('textInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        // 自动保存
+        setInterval(saveGame, 30000);
+    </script>
+</body>
+</html>
